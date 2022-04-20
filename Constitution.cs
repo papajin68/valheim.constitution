@@ -1,4 +1,4 @@
-﻿// Constitution
+﻿// Constitution - Some honest labor, and a hearty meal, will improve the constitution of any Viking!
 // Allows the adjustment of base health and stamina as well as adding a "Constitution" skill which will
 // adjust health and stamina according to the player's skill level.
 // 
@@ -26,8 +26,9 @@ namespace Constitution
         public const string PluginVersion = "1.0.0";
 
         private static Skills.SkillType ConstitutionSkill = Skills.SkillType.None;
-        private static float foodUpdate = 0f;
         private static float stamUsage = 0f;
+        private static float skillRaise = 0f;
+        private static int foodUpdate = 0;
 
         public static CustomLocalization Localization = LocalizationManager.Instance.GetLocalization();
 
@@ -40,7 +41,7 @@ namespace Constitution
         private static ConfigEntry<float> _constitutionStaminaModifier;
         private static ConfigEntry<float> _healthPerConstitution;
         private static ConfigEntry<float> _staminaPerConstitution;
-        private static ConfigEntry<float> _minStamUsageRequired;
+        private static ConfigEntry<float> _activityToSkillModifier;
 
         private void Awake()
         {
@@ -67,9 +68,12 @@ namespace Constitution
             _staminaPerConstitution = Config.Bind("Constitution", "StaminaPerConstitution", 0.5f,
                 new ConfigDescription("Amount of stamina gained per point of constitution", null,
                 new ConfigurationManagerAttributes { IsAdminOnly = true }));
-            _minStamUsageRequired = Config.Bind("Constitution", "MinimumStaminaUsageRequiredForSkillup", 50f,
-                new ConfigDescription("Minimum stamina usage requirement per 60 seconds to gain constitution skill", null,
+            _activityToSkillModifier = Config.Bind("Constitution", "ActivityToSkillModifer", 1.0f,
+                new ConfigDescription("Stamina usage required as a percentage of current skill (Skill * ActivityToSkillModifer)", null,
                 new ConfigurationManagerAttributes { IsAdminOnly = true }));
+
+            // Add sanity checks for configuration values -- Negative numbers are possible, but values probably shouldn't go below 1
+            // May want to add a cap on the high side as well
 
             _harmony = new Harmony(Info.Metadata.GUID);
             _harmony.PatchAll();
@@ -78,7 +82,7 @@ namespace Constitution
             {
                 Identifier = PluginGUID,
                 Name = "Constitution",
-                Description = "Increases your body's constitution",
+                Description = "Increases your body's strength and stamina.",
                 IncreaseStep = 1f
             });
 
@@ -111,15 +115,16 @@ namespace Constitution
         {
             static void Prefix(Player __instance, float dt)
             {
-                if (__instance.m_foods.Count > 0)
+                if (foodUpdate < 1500 && __instance.m_foods.Count > 0)
                 {
-                    foodUpdate += dt;
-                    if (foodUpdate >= 60f && stamUsage > _minStamUsageRequired.Value)
+                    if (++foodUpdate % 50 == 0)
                     {
-                        Jotunn.Logger.LogInfo($"Constitution Update: Food Time = {foodUpdate}, Stamina = {stamUsage}");
-                        foodUpdate = 0f;
-                        stamUsage = 0f;
-                        UpdateConstitutionSkill(__instance);
+                        Jotunn.Logger.LogDebug($"Times: {dt}, {foodUpdate}");
+                        foreach (Player.Food food in __instance.m_foods)
+                        {
+                            skillRaise += (food.m_item.m_shared.m_food * _constitutionHealthModifer.Value + food.m_item.m_shared.m_foodStamina *
+                            _constitutionStaminaModifier.Value) / food.m_item.m_shared.m_foodBurnTime;
+                        }
                     }
                 }
             }
@@ -130,15 +135,17 @@ namespace Constitution
         {
             static void Prefix(Player __instance, float v)
             {
-                if (v > 0f && __instance.m_foods.Count > 0)
+                if (foodUpdate >= 1500 && v > 0f && skillRaise > 0)
                 {
+                    float stamRequired = __instance.GetSkills().GetSkill(ConstitutionSkill).m_level * _activityToSkillModifier.Value;
                     stamUsage += v;
-                    if (foodUpdate >= 60f && stamUsage > _minStamUsageRequired.Value)
+                    if (stamUsage >= stamRequired)
                     {
-                        Jotunn.Logger.LogInfo($"Constitution Update: Food Time = {foodUpdate}, Stamina = {stamUsage}");
-                        foodUpdate = 0f;
-                        stamUsage = 0f;
+                        Jotunn.Logger.LogDebug($"Update Skill: Stamina Required = {stamRequired}, Used = {stamUsage}");
                         UpdateConstitutionSkill(__instance);
+                        foodUpdate = 0;
+                        stamUsage = 0f;
+                        skillRaise = 0f;
                     }
                 }
             }
@@ -151,20 +158,13 @@ namespace Constitution
                 return;
             }
 
-            float skillRaise = 0f;
-            foreach (Player.Food food in player.m_foods)
-            {
-                skillRaise += (food.m_item.m_shared.m_food * _constitutionHealthModifer.Value + food.m_item.m_shared.m_foodStamina * _constitutionStaminaModifier.Value) /
-                        (food.m_item.m_shared.m_foodBurnTime / 60f);
-                Jotunn.Logger.LogDebug($"Update Food: {food.m_name}|{food.m_health}/{food.m_item.m_shared.m_food}|{food.m_stamina}/{food.m_item.m_shared.m_foodStamina}|{food.m_item.m_shared.m_foodBurnTime}/{food.m_time}");
-            }
-
             if (skillRaise > 0)
             {
                 Skills.Skill skill = player.GetSkills().GetSkill(ConstitutionSkill);
                 float roundRaise = (float)Math.Round(skillRaise, 2);
-                Jotunn.Logger.LogInfo($"Constitution Skill: Level = {skill.m_level}, Accumlator = {skill.m_accumulator}, Raise = {roundRaise}");
+                Jotunn.Logger.LogInfo($"Before Skill Raise: Level = {skill.m_level}, Accumulator = {skill.m_accumulator}, Raise = {roundRaise}");
                 player.RaiseSkill(ConstitutionSkill, roundRaise);
+                Jotunn.Logger.LogInfo($"After Skill Raise: Level = {skill.m_level}, Accumulator = {skill.m_accumulator}");
             }
         }
 
