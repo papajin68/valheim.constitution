@@ -37,8 +37,8 @@ namespace Constitution
         //private static ConfigEntry<bool> _forceServerConfig;
         private static ConfigEntry<float> _baseHealthAdjust;
         private static ConfigEntry<float> _baseStaminaAdjust;
-        private static ConfigEntry<float> _constitutionHealthModifer;
-        private static ConfigEntry<float> _constitutionStaminaModifier;
+        private static ConfigEntry<float> _constitutionGainHealthModifer;
+        private static ConfigEntry<float> _constitutionGainStaminaModifier;
         private static ConfigEntry<float> _healthPerConstitution;
         private static ConfigEntry<float> _staminaPerConstitution;
         private static ConfigEntry<float> _activityToSkillModifier;
@@ -52,15 +52,16 @@ namespace Constitution
                 new ConfigurationManagerAttributes { IsAdminOnly = true }));*/
             _baseHealthAdjust = Config.Bind("Constitution", "BaseHealthAdjust", 10f,
                 new ConfigDescription("Amount of health added to base health pool", null,
+                //new AcceptableValueRange<float>(-25f, 1000f),
                 new ConfigurationManagerAttributes { IsAdminOnly = true }));
             _baseStaminaAdjust = Config.Bind("Constitution", "BaseStaminaAdjust", 10f,
                 new ConfigDescription("Amount of stamina added to base stamina pool", null,
                 new ConfigurationManagerAttributes { IsAdminOnly = true }));
-            _constitutionHealthModifer = Config.Bind("Constitution", "ConstitutionPerFoodHealth", 0.1f,
-                new ConfigDescription("Constitution gained health modifier when eating (Food Health / Food Duration * Modifier)", null,
+            _constitutionGainHealthModifer = Config.Bind("Constitution", "ConstitutionGainHealthModifier", 0.25f,
+                new ConfigDescription("Modifier applied to food-health based constitution gain (higher = faster skill gain, scales with quality of food)", null,
                 new ConfigurationManagerAttributes { IsAdminOnly = true }));
-            _constitutionStaminaModifier = Config.Bind("Constitution", "ConstitutionPerFoodStamina", 0.1f,
-                new ConfigDescription("Constitution gained stamina modifier when eating (Food Stamina / Food Duration * Modifier)", null,
+            _constitutionGainStaminaModifier = Config.Bind("Constitution", "ConstitutionGainStaminaModifier", 0.25f,
+                new ConfigDescription("Modifier applied to food-stamina based constitution gain (higher = faster skill gain, scales with quality of food)", null,
                 new ConfigurationManagerAttributes { IsAdminOnly = true }));
             _healthPerConstitution = Config.Bind("Constitution", "HealthPerConstitution", 0.5f,
                 new ConfigDescription("Amount of health gained per point of constitution", null,
@@ -69,11 +70,10 @@ namespace Constitution
                 new ConfigDescription("Amount of stamina gained per point of constitution", null,
                 new ConfigurationManagerAttributes { IsAdminOnly = true }));
             _activityToSkillModifier = Config.Bind("Constitution", "ActivityToSkillModifer", 1.0f,
-                new ConfigDescription("Stamina usage required as a percentage of current skill (Skill * ActivityToSkillModifer)", null,
+                new ConfigDescription("Stamina usage required as a percentage of current skill (lower = less activity required to gain skill)", null,
                 new ConfigurationManagerAttributes { IsAdminOnly = true }));
 
-            // Add sanity checks for configuration values -- Negative numbers are possible, but values probably shouldn't go below 1
-            // May want to add a cap on the high side as well
+            // Add sanity checks for configuration values?
 
             _harmony = new Harmony(Info.Metadata.GUID);
             _harmony.PatchAll();
@@ -119,11 +119,10 @@ namespace Constitution
                 {
                     if (++foodUpdate % 50 == 0)
                     {
-                        Jotunn.Logger.LogDebug($"Times: {dt}, {foodUpdate}");
                         foreach (Player.Food food in __instance.m_foods)
                         {
-                            skillRaise += (food.m_item.m_shared.m_food * _constitutionHealthModifer.Value + food.m_item.m_shared.m_foodStamina *
-                            _constitutionStaminaModifier.Value) / food.m_item.m_shared.m_foodBurnTime;
+                            skillRaise += (food.m_item.m_shared.m_food * _constitutionGainHealthModifer.Value + food.m_item.m_shared.m_foodStamina *
+                            _constitutionGainStaminaModifier.Value) / food.m_item.m_shared.m_foodBurnTime;
                         }
                     }
                 }
@@ -162,9 +161,7 @@ namespace Constitution
             {
                 Skills.Skill skill = player.GetSkills().GetSkill(ConstitutionSkill);
                 float roundRaise = (float)Math.Round(skillRaise, 2);
-                Jotunn.Logger.LogInfo($"Before Skill Raise: Level = {skill.m_level}, Accumulator = {skill.m_accumulator}, Raise = {roundRaise}");
                 player.RaiseSkill(ConstitutionSkill, roundRaise);
-                Jotunn.Logger.LogInfo($"After Skill Raise: Level = {skill.m_level}, Accumulator = {skill.m_accumulator}");
             }
         }
 
