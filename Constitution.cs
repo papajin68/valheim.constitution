@@ -23,7 +23,7 @@ namespace Constitution
     {
         public const string PluginGUID = "papajin68.constitution";
         public const string PluginName = "Constitution";
-        public const string PluginVersion = "1.0.0";
+        public const string PluginVersion = "1.0.1";
 
         private static Skills.SkillType ConstitutionSkill = Skills.SkillType.None;
         private static float stamUsage = 0f;

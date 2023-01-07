@@ -1,8 +1,8 @@
 {
   "name": "Constitution",
-  "version_number": "1.0.0",
+  "version_number": "1.0.1",
   "website_url": "https://github.com/papajin68/valheim.constitution",
-  "description": "Some honest labor, and a hearty meal, will improve the constitution of any Viking!  Allows the adjustment of base health and stamina as well as adding a "Constitution" skill which will adjust health and stamina according to the player's constitution level.",
+  "description": "Some honest labor, and a hearty meal, will improve the constitution of any Viking!  Allows the adjustment of base health and stamina as well as adding a \"Constitution\" skill which will adjust health and stamina according to the player's constitution level.",
   "dependencies": [
     "denikson-BepInExPack_Valheim-5.4.1901",
     "ValheimModding-Jotunn-2.10.2"
