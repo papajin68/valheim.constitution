@@ -23,7 +23,7 @@ namespace Constitution
     {
         public const string PluginGUID = "papajin68.constitution";
         public const string PluginName = "Constitution";
-        public const string PluginVersion = "1.0.1";
+        public const string PluginVersion = "1.0.2";
 
         private static Skills.SkillType ConstitutionSkill = Skills.SkillType.None;
         private static float stamUsage = 0f;
@@ -90,7 +90,7 @@ namespace Constitution
         }
 
         [HarmonyPatch(typeof(Player), nameof(Player.GetBaseFoodHP))]
-        class PlayerGetBaseFoodHPPatch
+        class p68_PlayerGetBaseFoodHPPatch
         {
             static void Postfix(Player __instance, ref float __result)
             {
@@ -100,7 +100,7 @@ namespace Constitution
         }
 
         [HarmonyPatch(typeof(Player), nameof(Player.GetTotalFoodValue))]
-        class PlayerGetTotalFoodValuePatch
+        class p68_PlayerGetTotalFoodValuePatch
         {
             public static void Postfix(Player __instance, ref float hp, ref float stamina)
             {
@@ -111,7 +111,7 @@ namespace Constitution
         }
 
         [HarmonyPatch(typeof(Player), nameof(Player.UpdateFood))]
-        class PlayerUpdateFoodPatch
+        class p68_PlayerUpdateFoodPatch
         {
             static void Prefix(Player __instance, float dt)
             {
@@ -130,7 +130,7 @@ namespace Constitution
         }
 
         [HarmonyPatch(typeof(Player), nameof(Player.UseStamina))]
-        class PlayerUseStaminaPatch
+        class p68_PlayerUseStaminaPatch
         {
             static void Prefix(Player __instance, float v)
             {
@@ -141,7 +141,7 @@ namespace Constitution
                     if (stamUsage >= stamRequired)
                     {
                         Jotunn.Logger.LogDebug($"Update Skill: Stamina Required = {stamRequired}, Used = {stamUsage}");
-                        UpdateConstitutionSkill(__instance);
+                        p68_UpdateConstitutionSkill(__instance);
                         foodUpdate = 0;
                         stamUsage = 0f;
                         skillRaise = 0f;
@@ -150,7 +150,7 @@ namespace Constitution
             }
         }
 
-        private static void UpdateConstitutionSkill(Player player)
+        private static void p68_UpdateConstitutionSkill(Player player)
         {
             if (player.GetSkills().GetSkill(ConstitutionSkill).m_level >= 100f)
             {
