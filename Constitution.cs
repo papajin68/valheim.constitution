@@ -23,7 +23,7 @@ namespace Constitution
     {
         public const string PluginGUID = "papajin68.constitution";
         public const string PluginName = "Constitution";
-        public const string PluginVersion = "1.0.2";
+        public const string PluginVersion = "1.0.3";
 
         private static Skills.SkillType ConstitutionSkill = Skills.SkillType.None;
         private static float stamUsage = 0f;
@@ -47,9 +47,6 @@ namespace Constitution
         {
             Config.SaveOnConfigSet = true;
 
-            /*_forceServerConfig = Config.Bind("General", "ForceServerConfig", true,
-                new ConfigDescription("Forces server config to override client config", null,
-                new ConfigurationManagerAttributes { IsAdminOnly = true }));*/
             _baseHealthAdjust = Config.Bind("Constitution", "BaseHealthAdjust", 10f,
                 new ConfigDescription("Amount of health added to base health pool", null,
                 //new AcceptableValueRange<float>(-25f, 1000f),

@@ -363,5 +363,5 @@ MigrationBackup/
 FodyWeavers.xsd
 
 # Bepinex Projects
-Package
-images
+Package/
+images/
